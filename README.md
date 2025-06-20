@@ -18,7 +18,19 @@
 
 请先确保已安装 Python 3.7 及以上版本。
 
-安装所需依赖：
+推荐使用虚拟环境：
+
+强烈建议在项目根目录下创建虚拟环境，避免依赖冲突：
+
+```bash
+python -m venv .venv
+# Windows 激活虚拟环境
+.venv\\Scripts\\activate
+# macOS/Linux 激活虚拟环境
+source .venv/bin/activate
+```
+
+激活虚拟环境后再安装依赖：
 
 ```bash
 pip install -r requirements.txt
