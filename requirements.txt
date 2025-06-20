@@ -1,0 +1,5 @@
+requests
+transformers
+tqdm
+huggingface-hub
+hf-transfer
