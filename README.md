@@ -1,77 +1,85 @@
-# Hugging Face 模型下载器 (官方工具封装)
+# 🤗 Hugging Face 模型下载助手（支持批量下载与加速器）
 
-## 项目简介
+这是一个基于命令行的 Python 工具，旨在通过 `huggingface-cli` 快速下载 Hugging Face 上的单个或多个模型，支持代理配置、`hf_transfer` 加速、配置文件持久化、失败自动重试、缓存隔离等增强功能。
 
-本项目是一个基于 Python 的、对 Hugging Face 官方命令行工具 (`huggingface-cli`) 的用户友好封装。它旨在提供一个简单的交互式或命令行界面，同时利用 `hf_transfer` (如果可用) 实现最快的下载速度。
+## 🚀 功能特性
 
-## 主要功能
+- 支持单个或批量模型下载（读取 `.txt` / `.json` 文件）
+- 自动配置加速器：可检测 `hf_transfer` 并启用高速下载
+- 下载失败自动重试，默认 3 次
+- 支持指定下载模型中的单个文件
+- 支持代理设置（HTTP/HTTPS）
+- 自动检测 `.incomplete` 文件并清理
+- 使用临时缓存目录进行下载，下载完成后安全移动到目标位置
+- 中文交互界面，支持非交互命令行模式
 
-- **保留交互式界面**：可通过命令行参数或交互式问答方式指定模型和下载目录。
-- **配置文件**：首次在交互模式下输入下载目录和代理地址后，会自动创建 `config.ini` 文件保存设置，方便后续使用。
-- **调用官方工具**：底层使用 `huggingface-cli download` 命令，确保下载过程的稳定性和健壮性。
-- **自动启用加速**：自动检测并尝试启用 `hf_transfer`，为用户带来极致的下载体验。
-- **断点续传**：完美继承官方工具的断点续传功能。
-- **跨平台兼容**：在 Windows, macOS 和 Linux 上均可良好运行。
-- **单文件下载**：支持只下载模型仓库中的某个特定文件（如权重文件、配置文件等），无需下载整个模型。
+## 🛠️ 安装依赖
 
-## 依赖安装
+在使用本工具时，建议你创建独立的 **Python 虚拟环境**。
 
-请先确保已安装 Python 3.7 及以上版本。
-
-推荐使用虚拟环境：
-
-强烈建议在项目根目录下创建虚拟环境，避免依赖冲突：
+以下是推荐操作：
 
 ```bash
+# 创建虚拟环境
 python -m venv .venv
-# Windows 激活虚拟环境
-.venv\\Scripts\\activate
-# macOS/Linux 激活虚拟环境
+
+# 激活环境
+# Windows
+.venv\Scripts\activate
+# macOS/Linux
 source .venv/bin/activate
+
+# 安装依赖
+pip install huggingface_hub hf_transfer
 ```
 
-激活虚拟环境后再安装依赖：
+## 📦 使用方法
 
 ```bash
-pip install -r requirements.txt
+python huggingface_downloader.py [参数]
 ```
 
-> **注意:** `hf-transfer` 可能会因为网络或权限问题安装失败。但无需担心，即使它安装失败，本工具依然可以正常使用，只是下载速度会回退到普通模式。
+支持的参数：
 
-## 使用方法
+| 参数           | 说明                                       |
+| -------------- | ------------------------------------------ |
+| `--model`      | 单个模型名，如 `bert-base-uncased`         |
+| `--model_list` | 模型名列表文件路径，支持 `.txt` 或 `.json` |
+| `--output_dir` | 模型保存目录                               |
+| `--proxy`      | 使用代理，如 `http://127.0.0.1:7890`       |
+| `--file`       | 只下载模型仓库中的单个文件                 |
+| `--retries`    | 下载失败最大重试次数（默认 3）             |
 
-### 命令行方式
+### 示例
+
+**下载单个模型**
 
 ```bash
-python huggingface_downloader.py --model Qwen/Qwen1.5-0.5B --output_dir ./models --proxy http://127.0.0.1:7890
+python huggingface_downloader.py --model stabilityai/sv4d2.0 --output_dir F:\Models --proxy http://127.0.0.1:7890
 ```
 
-参数说明：
+**批量下载模型列表**
 
-- `--model`：要下载的模型名称 (例如 `Qwen/Qwen1.5-0.5B`)
-- `--output_dir`：模型保存的本地目录。如果未指定，将使用 `config.ini` 中的设置。
-- `--proxy`：(可选) HTTP/HTTPS 代理地址 (例如 `http://127.0.0.1:7890`)。如果未指定，将使用 `config.ini` 中的设置。
-- `--file`：(可选) 只下载模型仓库中的某个文件（如 `clip_l.safetensors`）。如果不指定，则下载整个模型。
+创建一个 `model_list.txt` 文件，内容如下：
 
-### 交互式方式
+```
+bert-base-uncased
+stabilityai/sv4d2.0
+runwayml/stable-diffusion-v1-5
+```
 
-直接运行脚本，根据提示输入模型名称、保存路径和代理地址（可选）：
+然后运行：
 
 ```bash
-python huggingface_downloader.py
+python huggingface_downloader.py --model_list model_list.txt --output_dir ./models
 ```
 
-> 在交互模式下，脚本会显示 `config.ini` 中已保存的设置作为默认值，可以直接回车使用。输入新值后，会自动保存以供下次使用。
+## 💡 提示
 
-> **单文件下载**：在交互模式下，输入模型名称和保存目录后，会提示你输入"文件名"。如果只想下载某个文件（如 `clip_l.safetensors`），请填写文件名；如果要下载整个模型，直接回车即可。
+- 若未指定 `--model` 或模型列表文件，脚本将进入中文交互模式。
+- 下载临时缓存目录为 `output_dir/__hf_tmp`，任务完成后会自动清除。
+- 下载失败提示中包含 Hugging Face 官方页面链接，可用于手动排查。
 
-## 注意事项
+## 📄 配置文件
 
-- 命令行参数会覆盖 `config.ini` 文件中的设置。
-- 本工具是 `huggingface-cli` 的一个外壳，实际的下载进度和日志由 `huggingface-cli` 打印。
-- 如果 `hf-transfer` 安装失败或不可用，下载速度会变慢，但功能不受影响。
-- 请确保你的网络可以访问 Hugging Face Hub，或者正确配置了代理。
-
-## 贡献与反馈
-
-如有建议或问题，欢迎提交 issue 或联系作者。
+首次运行时将生成 `config.ini`，自动保存最近的 `output_dir` 与 `proxy` 设置。下次运行将自动读取。
